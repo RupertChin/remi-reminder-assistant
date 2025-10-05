@@ -13,7 +13,6 @@ A voice-controlled reminder system for Raspberry Pi 5. Say "Hey Remi" to create,
 
 **Software:**
 - Raspberry Pi OS (64-bit)
-- Picovoice API key ([free tier available](https://console.picovoice.ai/))
 
 ## Setup
 
@@ -32,23 +31,7 @@ bash scripts/setup_environment.sh
 
 This installs all dependencies and creates a virtual environment.
 
-### 3. Add Your API Key
-
-Get a free Picovoice API key at https://console.picovoice.ai/
-
-Edit the `.env` file:
-```bash
-nano .env
-```
-
-Add your key:
-```
-PICOVOICE_ACCESS_KEY=your_key_here
-```
-
-Save and exit (Ctrl+X, then Y, then Enter).
-
-### 4. Download AI Models
+### 3. Download AI Models
 
 ```bash
 source venv/bin/activate
@@ -56,6 +39,7 @@ bash scripts/download_models.sh
 ```
 
 This downloads and installs:
+- openWakeWord models (automatically downloaded on first run)
 - Vosk speech recognition model (~40MB)
 - Piper text-to-speech model (~20MB)
 - spaCy NLP model (~12MB)
@@ -63,7 +47,7 @@ This downloads and installs:
 
 **Note:** The Gemma model download is large and may take 15-20 minutes depending on your internet speed. This higher-quality model enables more natural, conversational responses.
 
-### 5. Start the Assistant
+### 4. Start the Assistant
 
 ```bash
 python -m src.main
@@ -219,7 +203,7 @@ python -m src.main --no-gpio
 ## Credits
 
 Built with:
-- [Picovoice](https://picovoice.ai/) - Wake word detection
+- [openWakeWord](https://github.com/dscripka/openWakeWord) - Wake word detection (fully offline)
 - [Vosk](https://alphacephei.com/vosk/) - Speech recognition
 - [Piper](https://github.com/rhasspy/piper) - Text-to-speech
 - [spaCy](https://spacy.io/) - Natural language processing

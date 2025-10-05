@@ -32,10 +32,10 @@ TTS_SAMPLE_RATE = 22050  # 22.05kHz for TTS output (Piper default)
 OUTPUT_CHUNK_SIZE = 1024
 
 # Wake Word Configuration
-WAKE_WORD_KEYWORDS = ["hey remi"]  # Porcupine wake words
-WAKE_WORD_SENSITIVITY = 0.5  # 0.0 to 1.0, higher = more sensitive
+WAKE_WORD_KEYWORDS = ["hey_remi"]  # openWakeWord model names (custom trained model)
+WAKE_WORD_THRESHOLD = 0.5  # 0.0 to 1.0, higher = less sensitive (only trigger on confident detections)
 WAKE_WORD_COOLDOWN = 2.0  # Seconds before accepting another wake word
-PORCUPINE_FRAME_LENGTH = 512  # Porcupine requires 512 samples per frame
+WAKE_WORD_FRAME_LENGTH = 1280  # openWakeWord requires 1280 samples per frame @ 16kHz (80ms)
 
 # Speech Recognition Configuration
 SPEECH_TIMEOUT = 10.0  # Seconds of silence before stopping listening

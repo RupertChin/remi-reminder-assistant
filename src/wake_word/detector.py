@@ -1,5 +1,5 @@
 """
-Porcupine wake word detection.
+openWakeWord wake word detection.
 Subscribes to audio pipeline and detects wake words with cooldown.
 """
 
@@ -14,41 +14,39 @@ from config import settings
 
 logger = get_logger(__name__)
 
-# Import Porcupine only if available
+# Import openWakeWord only if available
 try:
-    import pvporcupine
-    PORCUPINE_AVAILABLE = True
+    from openwakeword.model import Model
+    OPENWAKEWORD_AVAILABLE = True
 except ImportError:
-    PORCUPINE_AVAILABLE = False
-    logger.warning("pvporcupine not available, wake word detection will be disabled")
+    OPENWAKEWORD_AVAILABLE = False
+    logger.warning("openwakeword not available, wake word detection will be disabled")
 
 
 class WakeWordDetector:
     """
-    Porcupine wake word detector.
+    openWakeWord wake word detector.
     Runs in dedicated worker thread and processes audio frames.
     """
 
-    def __init__(self, access_key: str, keywords: list = None,
-                 sensitivity: float = None, cooldown: float = None):
+    def __init__(self, keywords: list = None,
+                 threshold: float = None, cooldown: float = None):
         """
         Initialize wake word detector.
 
         Args:
-            access_key: Picovoice API key
-            keywords: List of wake words (default from settings)
-            sensitivity: Detection sensitivity 0.0-1.0 (default from settings)
+            keywords: List of wake word models to load (default from settings)
+            threshold: Detection threshold 0.0-1.0 (default from settings)
             cooldown: Seconds before accepting another detection (default from settings)
         """
-        if not PORCUPINE_AVAILABLE:
-            raise RuntimeError("pvporcupine is not installed")
+        if not OPENWAKEWORD_AVAILABLE:
+            raise RuntimeError("openwakeword is not installed")
 
-        self.access_key = access_key
         self.keywords = keywords or settings.WAKE_WORD_KEYWORDS
-        self.sensitivity = sensitivity if sensitivity is not None else settings.WAKE_WORD_SENSITIVITY
+        self.threshold = threshold if threshold is not None else settings.WAKE_WORD_THRESHOLD
         self.cooldown = cooldown if cooldown is not None else settings.WAKE_WORD_COOLDOWN
 
-        self.porcupine: Optional[pvporcupine.Porcupine] = None
+        self.model: Optional[Model] = None
         self.audio_queue: Optional[queue.Queue] = None
         self.worker_thread: Optional[threading.Thread] = None
         self.running = False
@@ -56,49 +54,68 @@ class WakeWordDetector:
         # Cooldown tracking
         self.last_detection_time = 0.0
 
-        # Audio buffer accumulation (Porcupine needs exact frame length)
+        # Audio buffer accumulation (openWakeWord needs 1280 samples per frame @ 16kHz = 80ms)
         self.frame_buffer = np.array([], dtype=np.int16)
-        self.frame_length = settings.PORCUPINE_FRAME_LENGTH
+        self.frame_length = settings.WAKE_WORD_FRAME_LENGTH
 
         # Callback for detections
         self.on_detection: Optional[Callable] = None
 
         logger.info(
             f"WakeWordDetector initialized: keywords={self.keywords}, "
-            f"sensitivity={self.sensitivity}, cooldown={self.cooldown}s"
+            f"threshold={self.threshold}, cooldown={self.cooldown}s"
         )
 
     def initialize(self) -> bool:
         """
-        Initialize Porcupine engine.
+        Initialize openWakeWord model.
 
         Returns:
             True if successful
         """
         try:
-            self.porcupine = pvporcupine.create(
-                access_key=self.access_key,
-                keywords=self.keywords,
-                sensitivities=[self.sensitivity] * len(self.keywords)
-            )
+            # Download models if not present
+            from openwakeword import utils
+            models_dir = settings.MODELS_DIR / "openwakeword"
+            models_dir.mkdir(exist_ok=True)
 
-            logger.info(
-                f"Porcupine initialized: frame_length={self.porcupine.frame_length}, "
-                f"sample_rate={self.porcupine.sample_rate}Hz"
-            )
+            # Download pre-trained models if needed
+            if not any(models_dir.iterdir()):
+                logger.info("Downloading openWakeWord models...")
+                utils.download_models(models_dir)
 
-            # Verify sample rate matches our audio pipeline
-            if self.porcupine.sample_rate != settings.AUDIO_SAMPLE_RATE:
-                logger.error(
-                    f"Sample rate mismatch: Porcupine={self.porcupine.sample_rate}Hz, "
-                    f"Pipeline={settings.AUDIO_SAMPLE_RATE}Hz"
-                )
+            # Load the model
+            # Use specific models if they match keywords, otherwise use all available
+            model_paths = []
+            for keyword in self.keywords:
+                # Map keyword to model file
+                model_file = models_dir / f"{keyword.replace(' ', '_')}.tflite"
+                if model_file.exists():
+                    model_paths.append(str(model_file))
+
+            # If no specific models found, use default models
+            if not model_paths:
+                logger.info(f"No specific models found for {self.keywords}, using default models")
+                # Try common alternatives
+                default_models = ["alexa", "hey_jarvis"]
+                for model_name in default_models:
+                    model_file = models_dir / f"{model_name}.tflite"
+                    if model_file.exists():
+                        model_paths.append(str(model_file))
+                        logger.info(f"Using {model_name} model as wake word")
+                        break
+
+            if not model_paths:
+                logger.error("No wake word models found. Please train a custom model or use pre-trained ones.")
                 return False
 
+            self.model = Model(wakeword_models=model_paths)
+
+            logger.info(f"openWakeWord initialized with models: {model_paths}")
             return True
 
         except Exception as e:
-            logger.error(f"Failed to initialize Porcupine: {e}", exc_info=True)
+            logger.error(f"Failed to initialize openWakeWord: {e}", exc_info=True)
             return False
 
     def start(self, audio_queue: queue.Queue) -> bool:
@@ -115,7 +132,7 @@ class WakeWordDetector:
             logger.warning("Wake word detector already running")
             return True
 
-        if self.porcupine is None:
+        if self.model is None:
             if not self.initialize():
                 return False
 
@@ -148,7 +165,7 @@ class WakeWordDetector:
                 # Get audio chunk from queue (blocking with timeout)
                 audio_chunk = self.audio_queue.get(timeout=0.5)
 
-                # Accumulate audio until we have enough for Porcupine
+                # Accumulate audio until we have enough for openWakeWord
                 self.frame_buffer = np.append(self.frame_buffer, audio_chunk)
 
                 # Process frames while we have enough data
@@ -157,12 +174,18 @@ class WakeWordDetector:
                     frame = self.frame_buffer[:self.frame_length]
                     self.frame_buffer = self.frame_buffer[self.frame_length:]
 
-                    # Process with Porcupine
-                    keyword_index = self.porcupine.process(frame)
+                    # Process with openWakeWord
+                    # Model expects float32 normalized to [-1, 1]
+                    frame_float = frame.astype(np.float32) / 32768.0
 
-                    if keyword_index >= 0:
-                        # Wake word detected!
-                        self._handle_detection(keyword_index)
+                    prediction = self.model.predict(frame_float)
+
+                    # Check if any keyword exceeds threshold
+                    for keyword, score in prediction.items():
+                        if score >= self.threshold:
+                            # Wake word detected!
+                            self._handle_detection(keyword, score)
+                            break
 
             except queue.Empty:
                 # No audio available, continue
@@ -174,12 +197,13 @@ class WakeWordDetector:
 
         logger.debug("Wake word detector worker thread stopped")
 
-    def _handle_detection(self, keyword_index: int) -> None:
+    def _handle_detection(self, keyword: str, score: float) -> None:
         """
         Handle wake word detection with cooldown.
 
         Args:
-            keyword_index: Index of detected keyword
+            keyword: Detected keyword
+            score: Detection score
         """
         current_time = time.time()
 
@@ -195,13 +219,13 @@ class WakeWordDetector:
         # Update last detection time
         self.last_detection_time = current_time
 
-        keyword = self.keywords[keyword_index]
-        logger.info(f"Wake word detected: '{keyword}'")
+        logger.info(f"Wake word detected: '{keyword}' (score: {score:.2f})")
 
         # Call callback if set
         if self.on_detection:
             try:
-                self.on_detection(keyword, keyword_index)
+                # For compatibility, pass keyword and index (always 0 for openWakeWord)
+                self.on_detection(keyword, 0)
             except Exception as e:
                 logger.error(f"Error in detection callback: {e}", exc_info=True)
 
@@ -219,8 +243,8 @@ class WakeWordDetector:
         """Clean up resources."""
         self.stop()
 
-        if self.porcupine:
-            self.porcupine.delete()
-            self.porcupine = None
+        if self.model:
+            # openWakeWord Model doesn't have explicit cleanup
+            self.model = None
 
         logger.info("WakeWordDetector cleanup complete")

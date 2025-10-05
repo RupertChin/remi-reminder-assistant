@@ -61,12 +61,9 @@ class Coordinator:
         self.running = False
         self.main_task: Optional[asyncio.Task] = None
 
-    async def initialize(self, picovoice_key: str) -> bool:
+    async def initialize(self) -> bool:
         """
         Initialize all components in dependency order.
-
-        Args:
-            picovoice_key: Picovoice API key for wake word detection
 
         Returns:
             True if all components initialized successfully
@@ -84,9 +81,7 @@ class Coordinator:
             self.pipeline_manager = PipelineManager()
 
             # 4. Wake word detector
-            self.wake_word_detector = WakeWordDetector(
-                access_key=picovoice_key
-            )
+            self.wake_word_detector = WakeWordDetector()
             self.wake_word_detector.set_callback(self._on_wake_word_detected)
 
             # 5. Speech recognizer

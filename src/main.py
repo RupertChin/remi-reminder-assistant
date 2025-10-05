@@ -63,7 +63,7 @@ def load_environment():
     Load environment variables from .env file.
 
     Returns:
-        True if .env loaded successfully (or doesn't exist), False if critical vars missing
+        True if .env loaded successfully (or doesn't exist)
     """
     # Load .env file if it exists
     env_path = Path(__file__).parent.parent / ".env"
@@ -72,18 +72,9 @@ def load_environment():
         load_dotenv(env_path)
         logger.info(f"Loaded environment from {env_path}")
     else:
-        logger.warning(f".env file not found at {env_path}")
-        logger.info("Create .env file with PICOVOICE_ACCESS_KEY for wake word detection")
+        logger.info(f".env file not found at {env_path} (not required)")
 
-    # Check for required environment variables
-    picovoice_key = os.getenv("PICOVOICE_ACCESS_KEY")
-
-    if not picovoice_key:
-        logger.error("PICOVOICE_ACCESS_KEY not found in environment")
-        logger.error("Please create .env file with: PICOVOICE_ACCESS_KEY=your_key_here")
-        return False, None
-
-    return True, picovoice_key
+    return True
 
 
 def list_audio_devices():
@@ -139,9 +130,7 @@ async def main():
     logger.info("=" * 60)
 
     # Load environment
-    env_ok, picovoice_key = load_environment()
-    if not env_ok:
-        return 1
+    load_environment()
 
     # Create coordinator
     coordinator = Coordinator()
@@ -161,7 +150,7 @@ async def main():
         # Initialize coordinator
         logger.info("Initializing application...")
 
-        if not await coordinator.initialize(picovoice_key):
+        if not await coordinator.initialize():
             logger.error("Failed to initialize application")
             return 1
 
