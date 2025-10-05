@@ -7,20 +7,22 @@ echo "========================================"
 echo "Downloading AI Models"
 echo "========================================"
 
+# Get script directory and project root
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+MODELS_DIR="$PROJECT_ROOT/data/models"
+
 # Create models directory
-MODELS_DIR="data/models"
 mkdir -p "$MODELS_DIR"
 
 # Download Vosk model (40MB, English)
 echo ""
 echo "Downloading Vosk speech recognition model..."
 if [ ! -d "$MODELS_DIR/vosk-model-small-en-us-0.15" ]; then
-    cd "$MODELS_DIR"
-    wget -q --show-progress https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
-    unzip -q vosk-model-small-en-us-0.15.zip
-    rm vosk-model-small-en-us-0.15.zip
+    wget -q --show-progress -P "$MODELS_DIR" https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+    unzip -q "$MODELS_DIR/vosk-model-small-en-us-0.15.zip" -d "$MODELS_DIR"
+    rm "$MODELS_DIR/vosk-model-small-en-us-0.15.zip"
     echo "✓ Vosk model downloaded"
-    cd - > /dev/null
 else
     echo "✓ Vosk model already exists"
 fi
@@ -29,12 +31,10 @@ fi
 echo ""
 echo "Downloading Piper TTS model..."
 if [ ! -f "$MODELS_DIR/en_US-amy-medium.onnx" ]; then
-    cd "$MODELS_DIR"
-    wget -q --show-progress https://github.com/rhasspy/piper/releases/download/v1.2.0/voice-en_US-amy-medium.tar.gz
-    tar -xzf voice-en_US-amy-medium.tar.gz
-    rm voice-en_US-amy-medium.tar.gz
+    wget -q --show-progress -P "$MODELS_DIR" https://github.com/rhasspy/piper/releases/download/v1.2.0/voice-en_US-amy-medium.tar.gz
+    tar -xzf "$MODELS_DIR/voice-en_US-amy-medium.tar.gz" -C "$MODELS_DIR"
+    rm "$MODELS_DIR/voice-en_US-amy-medium.tar.gz"
     echo "✓ Piper model downloaded"
-    cd - > /dev/null
 else
     echo "✓ Piper model already exists"
 fi
