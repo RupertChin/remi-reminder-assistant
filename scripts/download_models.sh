@@ -8,7 +8,7 @@ echo "Downloading AI Models"
 echo "========================================"
 
 # Create models directory
-MODELS_DIR="../data/models"
+MODELS_DIR="data/models"
 mkdir -p "$MODELS_DIR"
 
 # Download Vosk model (40MB, English)
