@@ -31,9 +31,16 @@ fi
 echo ""
 echo "Downloading Piper TTS model..."
 if [ ! -f "$MODELS_DIR/en_US-amy-medium.onnx" ]; then
-    wget -q --show-progress -P "$MODELS_DIR" https://github.com/rhasspy/piper/releases/download/v1.2.0/voice-en_US-amy-medium.tar.gz
-    tar -xzf "$MODELS_DIR/voice-en_US-amy-medium.tar.gz" -C "$MODELS_DIR"
-    rm "$MODELS_DIR/voice-en_US-amy-medium.tar.gz"
+    # Download model file from HuggingFace
+    wget -q --show-progress \
+        "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx?download=true" \
+        -O "$MODELS_DIR/en_US-amy-medium.onnx"
+
+    # Download config file from HuggingFace
+    wget -q --show-progress \
+        "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/medium/en_US-amy-medium.onnx.json?download=true" \
+        -O "$MODELS_DIR/en_US-amy-medium.onnx.json"
+
     echo "✓ Piper model downloaded"
 else
     echo "✓ Piper model already exists"
