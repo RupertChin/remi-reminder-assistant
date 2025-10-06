@@ -148,10 +148,22 @@ class WakeWordDetector:
 
     def stop(self) -> None:
         """Stop wake word detection."""
+        logger.info("Stopping wake word detection...")
         self.running = False
 
-        if self.worker_thread:
-            self.worker_thread.join(timeout=2.0)
+        # Clear the queue to unblock the worker thread
+        if self.audio_queue:
+            try:
+                while not self.audio_queue.empty():
+                    self.audio_queue.get_nowait()
+            except:
+                pass
+
+        # Wait for thread with longer timeout
+        if self.worker_thread and self.worker_thread.is_alive():
+            self.worker_thread.join(timeout=5.0)
+            if self.worker_thread.is_alive():
+                logger.warning("Wake word detector thread did not stop cleanly")
             self.worker_thread = None
 
         logger.info("Wake word detection stopped")
