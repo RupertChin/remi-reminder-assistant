@@ -45,7 +45,6 @@ VOSK_MODEL_PATH = MODELS_DIR / "vosk-model-small-en-us-0.15"
 # NLP Configuration
 NLP_CONFIDENCE_THRESHOLD = 0.7  # Minimum confidence for rule-based parsing
 NLP_FUZZY_MATCH_THRESHOLD = 0.6  # For fuzzy string matching in deletion
-SPACY_MODEL = "en_core_web_sm"
 
 # LLM Configuration
 OLLAMA_HOST = "http://localhost:11434"

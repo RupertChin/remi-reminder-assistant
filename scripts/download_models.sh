@@ -46,6 +46,11 @@ else
     echo "✓ Piper model already exists"
 fi
 
+# Download openWakeWord preprocessing models
+echo ""
+echo "Downloading openWakeWord preprocessing models..."
+python -c "from openwakeword.utils import download_models; download_models()" 2>&1 | grep -E "Downloaded|already exists" || echo "✓ openWakeWord models downloaded"
+
 # Install Ollama
 echo ""
 echo "========================================"

@@ -202,11 +202,12 @@ class TTSSynthesizer:
             logger.info(f"Synthesizing: '{text}'")
 
             # Generate audio using Piper
-            # Piper returns a generator of audio chunks
+            # Use synthesize_stream_raw() for streaming audio bytes
             audio_chunks = []
 
-            for audio_chunk in self.voice.synthesize(text):
-                # audio_chunk is numpy array of int16 samples
+            for audio_bytes in self.voice.synthesize_stream_raw(text):
+                # Convert bytes to numpy array of int16 samples
+                audio_chunk = np.frombuffer(audio_bytes, dtype=np.int16)
                 audio_chunks.append(audio_chunk)
 
             # Concatenate all chunks
