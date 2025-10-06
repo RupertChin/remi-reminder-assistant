@@ -68,6 +68,33 @@ else
     echo "✓ Ollama installed"
 fi
 
+# Start Ollama server if not running
+echo ""
+echo "Checking Ollama server status..."
+if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+    echo "Starting Ollama server in background..."
+    ollama serve > /dev/null 2>&1 &
+    OLLAMA_PID=$!
+
+    # Wait for server to start (max 10 seconds)
+    echo "Waiting for Ollama server to be ready..."
+    for i in {1..10}; do
+        if curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+            echo "✓ Ollama server is ready"
+            break
+        fi
+        sleep 1
+    done
+
+    # Check if server actually started
+    if ! curl -s http://localhost:11434/api/tags > /dev/null 2>&1; then
+        echo "Error: Failed to start Ollama server"
+        exit 1
+    fi
+else
+    echo "✓ Ollama server already running"
+fi
+
 # Download Gemma model
 echo ""
 echo "Downloading Gemma 2B model (~2.5GB, this will take a while)..."
