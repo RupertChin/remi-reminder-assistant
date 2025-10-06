@@ -46,12 +46,6 @@ else
     echo "✓ Piper model already exists"
 fi
 
-# Download spaCy model
-echo ""
-echo "Downloading spaCy NLP model..."
-python -m spacy download en_core_web_sm --quiet 2>&1 | grep -v "Requirement already satisfied" || true
-echo "✓ spaCy model downloaded"
-
 # Install Ollama
 echo ""
 echo "========================================"

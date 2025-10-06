@@ -15,18 +15,10 @@ from config.settings import IntentType, NLP_CONFIDENCE_THRESHOLD, NLP_FUZZY_MATC
 
 logger = get_logger(__name__)
 
-# Import spaCy only if available
-try:
-    import spacy
-    SPACY_AVAILABLE = True
-except ImportError:
-    SPACY_AVAILABLE = False
-    logger.warning("spaCy not available, NLP parsing will be limited")
-
 
 class IntentParser:
     """
-    Rule-based intent parser using spaCy and regex patterns.
+    Rule-based intent parser using regex patterns and dateutil.
     """
 
     # Intent classification patterns
@@ -56,25 +48,9 @@ class IntentParser:
         'date': r'\b(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\b'
     }
 
-    def __init__(self, spacy_model: str = "en_core_web_sm"):
-        """
-        Initialize intent parser.
-
-        Args:
-            spacy_model: spaCy model name to load
-        """
-        self.nlp = None
-
-        if SPACY_AVAILABLE:
-            try:
-                logger.info(f"Loading spaCy model: {spacy_model}")
-                self.nlp = spacy.load(spacy_model)
-                logger.info("spaCy model loaded successfully")
-            except Exception as e:
-                logger.warning(f"Failed to load spaCy model: {e}")
-                self.nlp = None
-        else:
-            logger.warning("spaCy not available, using basic parsing")
+    def __init__(self):
+        """Initialize intent parser."""
+        logger.info("Intent parser initialized")
 
     def parse(self, text: str) -> Dict[str, Any]:
         """

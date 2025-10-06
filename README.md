@@ -42,7 +42,6 @@ This downloads and installs:
 - openWakeWord models (automatically downloaded on first run)
 - Vosk speech recognition model (~40MB)
 - Piper text-to-speech model (~20MB)
-- spaCy NLP model (~12MB)
 - Ollama LLM with Gemma 2B q4_K_M model (~2.5GB)
 
 **Note:** The Gemma model download is large and may take 15-20 minutes depending on your internet speed. This higher-quality model enables more natural, conversational responses.
@@ -206,5 +205,5 @@ Built with:
 - [openWakeWord](https://github.com/dscripka/openWakeWord) - Wake word detection (fully offline)
 - [Vosk](https://alphacephei.com/vosk/) - Speech recognition
 - [Piper](https://github.com/rhasspy/piper) - Text-to-speech
-- [spaCy](https://spacy.io/) - Natural language processing
 - [Ollama](https://ollama.ai/) - Local LLM inference
+- [dateutil](https://dateutil.readthedocs.io/) - Date/time parsing
