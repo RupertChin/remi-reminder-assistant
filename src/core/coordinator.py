@@ -177,8 +177,11 @@ class Coordinator:
             except asyncio.CancelledError:
                 pass
 
-        # Cleanup components
-        await self._cleanup()
+        # Cleanup components with timeout
+        try:
+            await asyncio.wait_for(self._cleanup(), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.warning("Cleanup timed out after 10 seconds")
 
         logger.info("Coordinator stopped")
 
